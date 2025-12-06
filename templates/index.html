@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Heartbeat Sentinel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Load Chart.js for Waveform visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="navbar">
+            <div class="logo">
+                <span class="pulse-icon"></span>
+                <h1>AI SENTINEL</h1>
+            </div>
+            <div class="status-indicator">SYSTEM ONLINE</div>
+        </header>
+
+        <main>
+            <section class="hero-section">
+                <h2>Advanced Cardiac AI Analysis</h2>
+                <p>Upload a heart sound recording to detect arrhythmia and analyze heart rate variability with machine
+                    precision.</p>
+            </section>
+
+            <section class="control-panel glass-panel">
+                <div class="input-group">
+                    <label for="audio-upload" class="custom-file-upload">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Upload Audio / .dat Files
+                    </label>
+                    <!-- Allow multiple files for .dat + .hea pairs -->
+                    <input id="audio-upload" type="file" accept="audio/*, .dat, .hea" multiple />
+
+                    <button id="demo-btn" class="secondary-btn">Use Demo Audio</button>
+                </div>
+                <div id="file-name" class="file-name"></div>
+                <button id="analyze-btn" class="primary-btn" disabled>
+                    <span class="btn-text">INITIATE ANALYSIS</span>
+                    <div class="loader-ring hidden"></div>
+                </button>
+            </section>
+
+            <section id="results-section" class="results-grid hidden">
+                <!-- Diagnosis Card -->
+                <div class="card diagnosis-card glass-panel">
+                    <h3>DIAGNOSTIC OUTPUT</h3>
+                    <div class="diagnosis-content">
+                        <div id="status-icon" class="status-icon"></div>
+                        <div>
+                            <h2 id="diagnosis-title">Analyzing...</h2>
+                            <p id="diagnosis-desc">Processing waveform data...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Player -->
+                <div class="card glass-panel"
+                    style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;">
+                    <audio id="audio-player" controls style="width: 100%; height: 40px; border-radius: 20px;"></audio>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="card stat-card glass-panel">
+                    <h3>BPM</h3>
+                    <div class="stat-value" id="bpm-value">--</div>
+                    <div class="stat-label">Beats Per Minute</div>
+                </div>
+                <div class="card stat-card glass-panel">
+                    <h3>HRV (SDNN)</h3>
+                    <div class="stat-value" id="hrv-value">--</div>
+                    <div class="stat-label">Variability (ms)</div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="card viz-card glass-panel">
+                    <h3>WAVEFORM SIGNATURE</h3>
+                    <canvas id="waveformChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+
+</html>

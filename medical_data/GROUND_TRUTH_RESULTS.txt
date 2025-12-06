@@ -1,0 +1,8 @@
+FILENAME      | ACTUAL MEDICAL DIAGNOSIS
+----------------------------------------
+a0007.wav     | NORMAL / HEALTHY
+a0009.wav     | NORMAL / HEALTHY
+a0011.wav     | NORMAL / HEALTHY
+a0001.wav     | ABNORMAL / ARRHYTHMIA
+a0002.wav     | ABNORMAL / ARRHYTHMIA
+a0003.wav     | ABNORMAL / ARRHYTHMIA
