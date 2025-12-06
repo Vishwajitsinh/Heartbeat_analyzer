@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+.venv/
+env/
+.idea/
+.vscode/
+
+# Large models
+heartbeat_model.pkl
+*.h5
+*.pth
+*.onnx
