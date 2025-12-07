@@ -15,3 +15,10 @@ heartbeat_model.pkl
 *.h5
 *.pth
 *.onnx
+
+# Data
+medical_data/
+uploads/
+*.wav
+*.hea
+*.dat

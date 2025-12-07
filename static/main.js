@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeBtn = document.getElementById('analyze-btn');
     const fileNameDisplay = document.getElementById('file-name');
     const resultsSection = document.getElementById('results-section');
-    const demoBtn = document.getElementById('demo-btn');
 
     let chartInstance = null;
     let selectedFiles = null;
@@ -19,11 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             analyzeBtn.disabled = false;
         }
-    });
-
-    demoBtn.addEventListener('click', () => {
-        // Mock demo data for visual confirmation
-        simulateDemoAnalysis();
     });
 
     analyzeBtn.addEventListener('click', async () => {
@@ -98,6 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
         animateValue("bpm-value", 0, data.bpm, 1000);
         animateValue("hrv-value", 0, data.hrv_sdnn, 1000);
 
+        // New Metrics
+        const rmssdVal = document.getElementById('rmssd-value');
+        const snrVal = document.getElementById('snr-value');
+        if (rmssdVal) rmssdVal.textContent = data.hrv_rmssd;
+        if (snrVal) snrVal.textContent = data.snr + ' dB';
+
         // Update Diagnosis
         const diagTitle = document.getElementById('diagnosis-title');
         const diagDesc = document.getElementById('diagnosis-desc');
@@ -107,8 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
         diagDesc.textContent = data.description;
 
         // Reset classes
-        statusIcon.className = 'status-icon';
-        statusIcon.classList.add(`status-${data.status}`);
+        statusIcon.className = 'status-dot';
+        if (data.status === 'danger') statusIcon.classList.add('status-danger');
+        else if (data.status === 'warning') statusIcon.classList.add('status-warning');
+        else statusIcon.classList.add('status-healthy');
 
         // Render Waveform
         renderChart(data.waveform);
@@ -119,31 +121,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (chartInstance) {
             chartInstance.destroy();
-            chartInstance = null; // Explicitly nullify
+            chartInstance = null;
         }
 
         // Reset context state safely
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-        // Create gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(0, 242, 255, 0.5)');
-        gradient.addColorStop(1, 'rgba(0, 242, 255, 0)');
-
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Array.from({ length: waveform.length }, (_, i) => i),
                 datasets: [{
-                    label: 'Amplitude',
+                    label: 'Signal',
                     data: waveform,
-                    borderColor: '#00f2ff',
-                    backgroundColor: gradient,
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     borderWidth: 1.5,
                     pointRadius: 0,
-                    fill: true,
-                    tension: 0.4
+                    fill: false, /* Minimal line only */
+                    tension: 0.2
                 }]
             },
             options: {
@@ -170,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function animateValue(id, start, end, duration) {
         const obj = document.getElementById(id);
+        if (!obj) return;
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
@@ -182,24 +180,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         window.requestAnimationFrame(step);
-    }
-
-    function simulateDemoAnalysis() {
-        setLoading(true);
-        resultsSection.classList.add('hidden');
-
-        setTimeout(() => {
-            const mockData = {
-                bpm: 72,
-                hrv_sdnn: 45.2,
-                diagnosis: "Normal Sinus Rhythm",
-                description: "This is a demo result. Regular heartbeat pattern detected with optimal variability.",
-                status: "healthy",
-                waveform: Array.from({ length: 100 }, () => Math.random() * 0.5 - 0.25)
-            };
-            displayResults(mockData);
-            setLoading(false);
-            fileNameDisplay.textContent = "Demo Mode Active";
-        }, 1500);
     }
 });

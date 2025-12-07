@@ -31,35 +31,29 @@
                     precision.</p>
             </section>
 
-            <section class="control-panel glass-panel">
+            <section class="control-panel">
                 <div class="input-group">
                     <label for="audio-upload" class="custom-file-upload">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="17 8 12 3 7 8" />
-                            <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        Upload Audio / .dat Files
+                        [ Upload File ]
                     </label>
                     <!-- Allow multiple files for .dat + .hea pairs -->
                     <input id="audio-upload" type="file" accept="audio/*, .dat, .hea" multiple />
 
-                    <button id="demo-btn" class="secondary-btn">Use Demo Audio</button>
+                    <div id="file-name" class="file-name"></div>
                 </div>
-                <div id="file-name" class="file-name"></div>
+
                 <button id="analyze-btn" class="primary-btn" disabled>
-                    <span class="btn-text">INITIATE ANALYSIS</span>
+                    <span class="btn-text">RUN DIAGNOSTICS</span>
                     <div class="loader-ring hidden"></div>
                 </button>
             </section>
 
             <section id="results-section" class="results-grid hidden">
                 <!-- Diagnosis Card -->
-                <div class="card diagnosis-card glass-panel">
-                    <h3>DIAGNOSTIC OUTPUT</h3>
+                <div class="card diagnosis-card">
+                    <h3>Diagnostic Output</h3>
                     <div class="diagnosis-content">
-                        <div id="status-icon" class="status-icon"></div>
+                        <div id="status-icon" class="status-dot"></div>
                         <div>
                             <h2 id="diagnosis-title">Analyzing...</h2>
                             <p id="diagnosis-desc">Processing waveform data...</p>
@@ -68,26 +62,36 @@
                 </div>
 
                 <!-- Audio Player -->
-                <div class="card glass-panel"
-                    style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;">
-                    <audio id="audio-player" controls style="width: 100%; height: 40px; border-radius: 20px;"></audio>
+                <div class="card audio-card">
+                    <h3>Audio Input</h3>
+                    <audio id="audio-player" controls style="width: 100%; height: 32px; filter: grayscale(1);"></audio>
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="card stat-card glass-panel">
-                    <h3>BPM</h3>
+                <div class="card stat-card">
+                    <h3>Heart Rate</h3>
                     <div class="stat-value" id="bpm-value">--</div>
-                    <div class="stat-label">Beats Per Minute</div>
+                    <div class="stat-label">BPM</div>
                 </div>
-                <div class="card stat-card glass-panel">
-                    <h3>HRV (SDNN)</h3>
+                <div class="card stat-card">
+                    <h3>Variability</h3>
                     <div class="stat-value" id="hrv-value">--</div>
-                    <div class="stat-label">Variability (ms)</div>
+                    <div class="stat-label">SDNN (ms)</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Recovery</h3>
+                    <div class="stat-value" id="rmssd-value">--</div>
+                    <div class="stat-label">RMSSD (ms)</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Signal Quality</h3>
+                    <div class="stat-value" id="snr-value">--</div>
+                    <div class="stat-label">dB (SNR)</div>
                 </div>
 
                 <!-- Visualization -->
-                <div class="card viz-card glass-panel">
-                    <h3>WAVEFORM SIGNATURE</h3>
+                <div class="card viz-card">
+                    <h3>Waveform Visualizer</h3>
                     <canvas id="waveformChart"></canvas>
                 </div>
             </section>

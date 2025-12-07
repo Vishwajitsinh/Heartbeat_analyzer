@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from imblearn.over_sampling import SMOTE
+from joblib import Parallel, delayed
 
 # Configuration
 DATA_DIR = 'medical_data'
@@ -43,6 +44,10 @@ def extract_features_from_audio(y, sr):
         contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
         contrast_mean = np.mean(contrast.T, axis=0)
         
+        bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
+        bandwidth_mean = np.mean(bandwidth)
+        bandwidth_std = np.std(bandwidth)
+        
         # 3. Time-Domain (Rhythm/Energy)
         zcr = librosa.feature.zero_crossing_rate(y)
         zcr_mean = np.mean(zcr)
@@ -51,6 +56,11 @@ def extract_features_from_audio(y, sr):
         rms = librosa.feature.rms(y=y)
         rms_mean = np.mean(rms)
         rms_std = np.std(rms)
+        
+         # 4. Chroma (Pitch)
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        chroma_mean = np.mean(chroma.T, axis=0)
+        chroma_std = np.std(chroma.T, axis=0)
         
         # Tempo/Beat Features (Only if enough duration)
         if len(y) > sr:
@@ -67,7 +77,9 @@ def extract_features_from_audio(y, sr):
             rolloff_mean, rolloff_std, 
             zcr_mean, zcr_std,
             contrast_mean,
+            bandwidth_mean, bandwidth_std,
             rms_mean, rms_std,
+            chroma_mean, chroma_std,
             tempo
         ])
         return features
@@ -109,7 +121,11 @@ def train_model():
     # Load Labels
     labels_map = {}
     try:
-        ref_path = os.path.join(DATA_DIR, 'REFERENCE.csv')
+        ref_path = os.path.join(DATA_DIR, 'REFERENCE_ALL.csv')
+        if not os.path.exists(ref_path):
+             # Fallback to old one if new one doesn't exist yet
+             ref_path = os.path.join(DATA_DIR, 'REFERENCE.csv')
+             
         # Download logic skipped for brevity, assumed present
         with open(ref_path, 'r') as f:
             reader = csv.reader(f)
@@ -126,21 +142,27 @@ def train_model():
     X = []
     y = []
     
-    print("Extracting features from chunks...")
-    for i, wav_path in enumerate(wav_files):
+    print("Extracting features from chunks (Parallel Processing)...")
+    
+    # Define helper for parallel execution
+    def process_one_file(idx, wav_path):
         filename = os.path.splitext(os.path.basename(wav_path))[0]
         if filename in labels_map:
-            print(f"Processing {i}/{len(wav_files)}: {filename}", end='\r')
-            
-            # Extract MULTIPLE samples from ONE file
+            # print(f"Processing {idx}...", end='\r') # Avoid printing in threads
             chunk_features = process_file_chunks(wav_path)
-            
-            # 0=Normal, 1=Abnormal
             label = 0 if labels_map[filename] == -1 else 1
-            
-            for feat in chunk_features:
-                X.append(feat)
-                y.append(label)
+            return [(feat, label) for feat in chunk_features]
+        return []
+
+    # Run Parallel
+    results = Parallel(n_jobs=-1)(delayed(process_one_file)(i, p) for i, p in enumerate(wav_files))
+    
+    # Flatten results
+    for res in results:
+        for feat, label in res:
+            X.append(feat)
+            y.append(label)
+
                 
     print(f"\nTotal Training Samples (Chunks): {len(X)}")
     
@@ -168,9 +190,9 @@ def train_model():
     
     # Level 0 Learners
     estimators = [
-        ('rf', RandomForestClassifier(n_estimators=300, max_depth=20, n_jobs=-1, random_state=42)),
-        ('et', ExtraTreesClassifier(n_estimators=300, max_depth=25, n_jobs=-1, random_state=42)),
-        ('hgb', HistGradientBoostingClassifier(max_iter=300, random_state=42)) # Powerful LightGBM-like
+        ('rf', RandomForestClassifier(n_estimators=500, max_depth=30, n_jobs=-1, random_state=42)),
+        ('et', ExtraTreesClassifier(n_estimators=500, max_depth=35, n_jobs=-1, random_state=42)),
+        ('hgb', HistGradientBoostingClassifier(max_iter=500, learning_rate=0.05, random_state=42)) 
     ]
     
     # Meta Learner

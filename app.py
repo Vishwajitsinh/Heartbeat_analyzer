@@ -107,28 +107,13 @@ def analyze_heartbeat(file_path):
     
     # Expected distance between beats (in frames)
     if avg_bpm > 0:
-        expected_dist = peak_lag
-        # We allow some tolerance (e.g. +/- 30% for arrhythmia)
-        min_dist = int(expected_dist * 0.6) 
-    else:
-        min_dist = int(0.3 * sr / 512)
-
-    # Find peaks with this smarter distance constraint
-    smoothed_env = np.convolve(onset_env, np.ones(5)/5, mode='same') # Slight smooth
-    peaks, _ = signal.find_peaks(smoothed_env, height=np.mean(smoothed_env), distance=min_dist)
-    
-    peak_times = librosa.frames_to_time(peaks, sr=sr)
-    rr_intervals = np.diff(peak_times) * 1000 # ms
-    
-    if len(rr_intervals) > 2:
-        hrv_sdnn = np.std(rr_intervals)
-        # If autocorrelation gave us a solid BPM, use it. 
-        # Otherwise fall back to peak average if sensible.
-        if avg_bpm == 0:
-            avg_bpm = 60000 / np.mean(rr_intervals)
-    else:
         hrv_sdnn = 0
         if avg_bpm == 0: avg_bpm = 0
+
+    # Initialize defaults
+    diagnosis = "Unknown"
+    description = "Analysis could not be completed."
+    status = "neutral"
 
     # --- MACHINE LEARNING DIAGNOSIS ---
     try:
@@ -185,6 +170,10 @@ def analyze_heartbeat(file_path):
                 contrast = librosa.feature.spectral_contrast(y=y_chunk, sr=sr)
                 contrast_mean = np.mean(contrast.T, axis=0)
                 
+                bandwidth = librosa.feature.spectral_bandwidth(y=y_chunk, sr=sr)
+                bandwidth_mean = np.mean(bandwidth)
+                bandwidth_std = np.std(bandwidth)
+                
                 # 3. Time/Rhythm
                 zcr = librosa.feature.zero_crossing_rate(y_chunk)
                 zcr_mean = np.mean(zcr)
@@ -193,6 +182,11 @@ def analyze_heartbeat(file_path):
                 rms = librosa.feature.rms(y=y_chunk)
                 rms_mean = np.mean(rms)
                 rms_std = np.std(rms)
+                
+                 # 4. Chroma (Pitch)
+                chroma = librosa.feature.chroma_stft(y=y_chunk, sr=sr)
+                chroma_mean = np.mean(chroma.T, axis=0)
+                chroma_std = np.std(chroma.T, axis=0)
                 
                 # Tempo (try/catch for short chunks)
                 try:
@@ -209,7 +203,9 @@ def analyze_heartbeat(file_path):
                     rolloff_mean, rolloff_std, 
                     zcr_mean, zcr_std,
                     contrast_mean,
+                    bandwidth_mean, bandwidth_std,
                     rms_mean, rms_std,
+                    chroma_mean, chroma_std,
                     tempo_c
                 ])
                 
@@ -272,12 +268,16 @@ def analyze_heartbeat(file_path):
                 diagnosis = "Irregular Rhythm / Signal Noise"
                 description = "High variability detected (fallback mode)."
                 status = "warning"
+            else:
+                diagnosis = "Analysis Complete (No Model)"
+                description = "Basic signal analysis only."
+                status = "neutral"
                 
     except Exception as ml_err:
         print(f"ML Error: {ml_err}")
-        # Keep default safe fallback
-        if avg_bpm > 100 or avg_bpm < 50:
-            status = "warning"
+        diagnosis = "Algorithm Error"
+        description = f"Detailed analysis failed: {str(ml_err)}"
+        status = "warning"
             
     # Normalize waveform
     target_points = 200
@@ -287,6 +287,9 @@ def analyze_heartbeat(file_path):
     return {
         "bpm": round(float(avg_bpm), 1),
         "hrv_sdnn": round(float(hrv_sdnn), 1),
+        "hrv_rmssd": round(float(hrv_rmssd), 1),
+        "pnn50": round(float(hrv_pnn50), 1),
+        "snr": round(float(snr_score), 1),
         "diagnosis": diagnosis,
         "description": description,
         "status": status,
